@@ -134,6 +134,11 @@ struct Solver{
         // 1. その位置から最も近い & 訪れたことのない dest に向かう加速度を壁衝突まで生成
         // 2. 10 回 sample を取った平均を xy 方向にやって平均を現在位置にする
 
+        if( M == 0 ) caseA();
+        else caseB();
+    }
+
+    void caseA() {
         int op_cnt = 5000, vis_cnt = 0;
         double now_x = 0, now_y = 0;
         vector<bool> visited(N, false);
@@ -154,7 +159,6 @@ struct Solver{
             auto &&[nearest_x, nearest_y] = dest[min_idx];
             double ax = nearest_x - now_x, ay = nearest_y - now_y;
 
-            // 正規化
             c = 0, h = 0;
             while( c == 0 ) {
                 double norm = sqrt(ax*ax + ay*ay);
@@ -163,7 +167,7 @@ struct Solver{
                 ax *= ratio, ay *= ratio;
                 cout << "A " << (int)ax << " " << (int)ay << endl << flush;
                 cin >> c >> h;
-                // cerr << "c: " << c << " h: " << h << endl;
+                cerr << "c: " << c << " h: " << h << endl;
                 rep(i, h) {
                     int place; cin >> place;
                     visited[place] = true;
@@ -173,9 +177,9 @@ struct Solver{
                 op_cnt--;
                 if( op_cnt <= 0 ) return;
             }
+            cerr << endl;
 
-            // ===== 2. xy 方向に 1 回ずつ計測して現在位置にする =====
-            double sum_x = 0, sum_y = 0;
+            // ===== 2. xy 方向に measure 回ずつ計測して現在位置にする =====
             cout << "S " << 1 << " " << 0 << endl << flush;
             cin >> now_x;
             cin >> c >> h;
@@ -206,6 +210,10 @@ struct Solver{
             now_x = (100000.0 - now_x);
             now_y = (100000.0 - now_y);
         }
+        return;
+    }
+
+    void caseB() {
         return;
     }
 };
