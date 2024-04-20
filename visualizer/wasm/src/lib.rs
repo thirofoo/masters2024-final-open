@@ -147,7 +147,7 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     let mut trajectory = Group::new();
     // loop with sim
     let mut sim = Sim::new(input);
-    let drone_before = Circle::new().set("r", 2).set("fill", "black");
+    let drone_before = Circle::new().set("r", 2).set("fill", "rgba(0, 0, 0, 0.3)");
     let drone_current = Circle::new().set("r", 2).set("fill", "blue");
     let mut before = convert_svg_coord(sim.p.0, sim.p.1);
     let colors = get_colors(output.out.len());
@@ -214,6 +214,10 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
         targets = targets.add(circle.set("cx", x).set("cy", y));
         targets = targets.add(border_circle.set("cx", x).set("cy", y));
     }
+    targets = targets.set(
+        "transform",
+        format!("translate({}, {})", SVG_SIZE / 2, SVG_SIZE / 2),
+    );
     let svg = svg::Document::new()
         .set("width", SVG_SIZE)
         .set("height", SVG_SIZE)
