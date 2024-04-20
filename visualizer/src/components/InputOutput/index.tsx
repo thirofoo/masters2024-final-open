@@ -1,9 +1,9 @@
-import type { FC } from 'react';
-import { useState } from 'react';
-import { type VisualizerSettingInfo } from '../../types';
-import { useDownloadInput } from './hooks.ts';
+import type { FC } from "react";
+import { useState } from "react";
+import { type VisualizerSettingInfo } from "../../types";
+import { useDownloadInput } from "./hooks.ts";
 
-import styles from './index.module.css';
+import styles from "./index.module.css";
 
 type InputOutputProps = {
   visualizerSettingInfo: VisualizerSettingInfo;
@@ -17,13 +17,20 @@ const InputOutput: FC<InputOutputProps> = ({
   setVisualizerSettingInfo,
 }) => {
   const [downloadCases, setDownloadCases] = useState(100);
-  const [buttonText, setButtonText] = useState('Download');
+  const [buttonText, setButtonText] = useState("Download");
   const { downloadInput } = useDownloadInput();
 
   const onChangeSeed = (e: React.ChangeEvent<HTMLInputElement>) => {
     setVisualizerSettingInfo((prev) => ({
       ...prev,
       seed: Number(e.target.value),
+    }));
+  };
+
+  const onChangeType = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setVisualizerSettingInfo((prev) => ({
+      ...prev,
+      type: e.target.value,
     }));
   };
 
@@ -49,13 +56,23 @@ const InputOutput: FC<InputOutputProps> = ({
           <input
             type="number"
             value={visualizerSettingInfo.seed}
-            min={'0'}
-            max={'18446744073709551615'}
+            min={"0"}
+            max={"18446744073709551615"}
             onChange={onChangeSeed}
           />
         </label>
         <label>
+          Type:
+          <br />
+          <select value={visualizerSettingInfo.type} onChange={onChangeType}>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </select>
+        </label>
+        <label>
           #cases:
+          <br />
           <input
             type="number"
             value={downloadCases}
@@ -69,7 +86,7 @@ const InputOutput: FC<InputOutputProps> = ({
         <input
           type="button"
           value={buttonText}
-          disabled={buttonText !== 'Download'}
+          disabled={buttonText !== "Download"}
           onClick={() => {
             downloadInput(
               visualizerSettingInfo.seed,

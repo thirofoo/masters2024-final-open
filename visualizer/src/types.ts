@@ -2,6 +2,7 @@ export type VisualizerSettingInfo = {
   input: string;
   output: string;
   seed: number;
+  type: string;
   turn: number;
   maxTurn: number;
 };

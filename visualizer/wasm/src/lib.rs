@@ -7,8 +7,8 @@ use svg::node::element::{Circle, Group, Line, Rectangle, Text, Title};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub fn gen(seed: i32) -> String {
-    let i = original_gen(seed as u64, 'A');
+pub fn gen(seed: i32, t: char) -> String {
+    let i = original_gen(seed as u64, t);
     format!("{}", i)
 }
 

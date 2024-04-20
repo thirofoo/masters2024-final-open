@@ -15,6 +15,7 @@ const AHCLikeVisualizer: FC = () => {
       input: '',
       output: '',
       seed: 0,
+      type: 'A',
       turn: 0,
       maxTurn: 0,
     });
@@ -26,9 +27,9 @@ const AHCLikeVisualizer: FC = () => {
   });
 
   useEffect(() => {
-    const inputText = gen(visualizerSettingInfo.seed);
+    const inputText = gen(visualizerSettingInfo.seed, visualizerSettingInfo.type);
     setVisualizerSettingInfo((prev) => ({ ...prev, input: inputText }));
-  }, [visualizerSettingInfo.seed]);
+  }, [visualizerSettingInfo.seed, visualizerSettingInfo.type]);
 
   useEffect(() => {
     try {
