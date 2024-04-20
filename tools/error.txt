@@ -1,0 +1,3 @@
+    Finished release [optimized] target(s) in 1.26s
+     Running `target/release/tester ../main`
+Score = 1318

@@ -63,38 +63,149 @@ struct State{
     }
 };
 
+struct Line {
+    // type 1: y = ax + b ( 勾配 a, 切片 b )
+    // type 2: ax + by + c = 0 ( 2頂点 p1, p2 を通る直線 )
+    ll a, b, c, type;
+    Line(const ll a, const ll b) : a(a), b(b), c(0), type(1) {}
+    Line(const P &p1, const P &p2) : type(2) {
+        if( p1 == p2 ) cerr << "Warn: Same Vertex (p1,p2)\n";
+        auto &&[x1, y1] = p1;
+        auto &&[x2, y2] = p2;
+        ll dx = x1 - x2, dy = y1 - y2;
+        a = -dy, b = dx, c = dy*x1 - dx*y1;
+    
+        // gcd(a,b,c) = 1 & a > 0 で管理 ※ a == 0 の時は b > 0 で管理
+        if( a < 0 || ( a == 0 && b < 0 ) ) a *= -1, b *= -1, c *= -1;
+        ll g = gcd(abs(a), gcd(abs(b), abs(c)));
+        a /= g, b /= g, c /= g;
+    }
+    inline bool isOnLine(const P &p) {
+        auto &&[x,y] = p;
+        bool res = false;
+        res |= ( type == 1 && y == a*x + b );
+        res |= ( type == 2 && a*x + b*y + c == 0 );
+        return res;
+    }
+    inline double distance(const P &p) {
+        auto &&[x,y] = p;
+        if( type == 1 ) return abs(a*x - y + b) / sqrt(a*a + 1);
+        if( type == 2 ) return abs(a*x + b*y + c) / sqrt(a*a + b*b);
+        return 0;
+    }
+    // 演算子 overload (sort用)
+    constexpr bool operator<(const Line& l) const { return tuple(a,b,c) < tuple(l.a,l.b,l.c); }
+    constexpr bool operator>(const Line& l) const { return tuple(a,b,c) > tuple(l.a,l.b,l.c); }
+    constexpr bool operator==(const Line& l) const { return a == l.a && b == l.b && c == l.c; }
+};
+
 struct Solver{
-    int N, M, sx, sy;
+    int N, M, sx, sy, c, h;
     double eps, delta;
+    vector<int> q;
     vector<pair<int, int>> dest;
-    vector<tuple<int, int, int, int>> wall;
+    vector<Line> wall;
 
     Solver() {
         this->input();
-
+        q.resize(N);
     }
 
     void input() {
         cin >> N >> M >> eps >> delta >> sx >> sy;
-        dest.resize(N);
         rep(i, N) {
             int x, y; cin >> x >> y;
-            dest[i].emplace_back(x, y);
+            dest.emplace_back(pair(x, y));
         }
         rep(i, M) {
             int lx, ly, rx, ry; cin >> lx >> ly >> rx >> ry;
-            wall.emplace_back(lx, ly, rx, ry);
+            wall.emplace_back(Line(P(lx, ly), P(rx, ry)));
         }
         return;
     }
 
     void output() {
-        
+
         return;
     }
 
     void solve() {
+        // case A のみの貪欲解
+        // 1. その位置から最も近い & 訪れたことのない dest に向かう加速度を壁衝突まで生成
+        // 2. 10 回 sample を取った平均を xy 方向にやって平均を現在位置にする
 
+        int op_cnt = 5000, vis_cnt = 0;
+        double now_x = 0, now_y = 0;
+        vector<bool> visited(N, false);
+
+        while( true ) {
+            // ===== 1. その位置から最も近い & 未訪問の dest に向かう加速度を壁衝突まで生成 =====
+            double min_dist = 1e9;
+            int min_idx = -1;
+            rep(i, N) {
+                if( visited[i] ) continue;
+                auto &&[x, y] = dest[i];
+                double dist = sqrt((x - now_x)*(x - now_x) + (y - now_y)*(y - now_y));
+                if( dist < min_dist ) {
+                    min_dist = dist;
+                    min_idx = i;
+                }
+            }
+            auto &&[nearest_x, nearest_y] = dest[min_idx];
+            double ax = nearest_x - now_x, ay = nearest_y - now_y;
+
+            // 正規化
+            c = 0, h = 0;
+            while( c == 0 ) {
+                double norm = sqrt(ax*ax + ay*ay);
+                ax /= norm, ay /= norm;
+                double ratio = min(min_dist, 500.0-1.0);
+                ax *= ratio, ay *= ratio;
+                cout << "A " << (int)ax << " " << (int)ay << endl << flush;
+                cin >> c >> h;
+                // cerr << "c: " << c << " h: " << h << endl;
+                rep(i, h) {
+                    int place; cin >> place;
+                    visited[place] = true;
+                    vis_cnt++;
+                    if( vis_cnt == N ) return;
+                }
+                op_cnt--;
+                if( op_cnt <= 0 ) return;
+            }
+
+            // ===== 2. xy 方向に 1 回ずつ計測して現在位置にする =====
+            double sum_x = 0, sum_y = 0;
+            cout << "S " << 1 << " " << 0 << endl << flush;
+            cin >> now_x;
+            cin >> c >> h;
+            // cerr << "c: " << c << " h: " << h << endl;
+            rep(i, h) {
+                int place; cin >> place;
+                visited[place] = true;
+                vis_cnt++;
+                if( vis_cnt == N ) return;
+            }
+            op_cnt--;
+            if( op_cnt <= 0 ) return;
+
+            cout << "S " << 0 << " " << 1 << endl << flush;
+            cin >> now_y;
+            cin >> c >> h;
+            // cerr << "c: " << c << " h: " << h << endl;
+            rep(i, h) {
+                int place; cin >> place;
+                visited[place] = true;
+                vis_cnt++;
+                if( vis_cnt == N ) return;
+            }
+            op_cnt--;
+            if( op_cnt <= 0 ) return;
+
+            // cerr << "now_x: " << now_x << " now_y: " << now_y << endl;
+            now_x = (100000.0 - now_x);
+            now_y = (100000.0 - now_y);
+        }
         return;
     }
 };
