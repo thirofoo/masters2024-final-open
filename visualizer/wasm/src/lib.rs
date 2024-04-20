@@ -2,7 +2,7 @@ mod original_lib;
 
 use crate::original_lib::{gen as original_gen, Sim, MAX_T};
 use original_lib::{compute_score, parse_input, parse_output, Input, Output};
-use svg::node::element::{Circle, Group, Line, Rectangle, Text};
+use svg::node::element::{Circle, Group, Line, Rectangle, Text, Title};
 
 use wasm_bindgen::prelude::*;
 
@@ -211,8 +211,12 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
         } else {
             (target_unreached.clone(), target_unreached_border.clone())
         };
-        targets = targets.add(circle.set("cx", x).set("cy", y));
-        targets = targets.add(border_circle.set("cx", x).set("cy", y));
+        let title = Title::new().add(svg::node::Text::new(format!("{:?}", target)));
+        let circle_group = Group::new()
+            .add(title)
+            .add(circle.set("cx", x).set("cy", y))
+            .add(border_circle.set("cx", x).set("cy", y));
+        targets = targets.add(circle_group);
     }
     targets = targets.set(
         "transform",
