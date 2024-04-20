@@ -1,7 +1,2 @@
 node_modules
 target
-
-*
-!./tools/outA/*
-!./tools/outB/*
-!./tools/outC/*

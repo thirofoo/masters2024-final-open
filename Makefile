@@ -6,8 +6,20 @@ test:
 	@cd tools; \
     cargo run -r --bin vis ../_in ../_out
 
-all:
+all-a:
 	@clear
 	@echo "全体 test"
 	@cd tools; \
-	./test.sh
+	./test_a.sh
+
+all-b:
+	@clear
+	@echo "全体 test"
+	@cd tools; \
+	./test_b.sh
+
+all-c:
+	@clear
+	@echo "全体 test"
+	@cd tools; \
+	./test_c.sh
