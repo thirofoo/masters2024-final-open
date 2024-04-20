@@ -69,14 +69,14 @@ fn get_colors(cnt: usize) -> Vec<HslaColor> {
     colors
 }
 
-const SVG_WIDTH: usize = 800;
-const SVG_HEIGHT: usize = 800;
+const SVG_SIZE: usize = 800;
 const DRONE_AREA_SIZE: usize = 200_000;
+const CLEAR_RADIUS: usize = 2000;
 
 fn convert_svg_coord(x: f64, y: f64) -> (f64, f64) {
     (
-        x * SVG_WIDTH as f64 / DRONE_AREA_SIZE as f64,
-        -1.0 * y * SVG_HEIGHT as f64 / DRONE_AREA_SIZE as f64,
+        x * SVG_SIZE as f64 / DRONE_AREA_SIZE as f64,
+        -1.0 * y * SVG_SIZE as f64 / DRONE_AREA_SIZE as f64,
     )
 }
 
@@ -84,8 +84,8 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     let border = Rectangle::new()
         .set("x", 0)
         .set("y", 0)
-        .set("width", SVG_WIDTH)
-        .set("height", SVG_HEIGHT)
+        .set("width", SVG_SIZE)
+        .set("height", SVG_SIZE)
         .set("fill", "none")
         .set("stroke", "black")
         .set("stroke-width", 1);
@@ -93,7 +93,7 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     // 右上に +x, +yと書く
     texts = texts.add(
         Text::new()
-            .set("x", SVG_WIDTH - 20)
+            .set("x", SVG_SIZE - 20)
             .set("y", 20)
             .set("text-anchor", "end")
             .set("font-size", 20)
@@ -101,7 +101,7 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     );
     texts = texts.add(
         Text::new()
-            .set("x", SVG_WIDTH - 20)
+            .set("x", SVG_SIZE - 20)
             .set("y", 40)
             .set("text-anchor", "end")
             .set("font-size", 20)
@@ -111,7 +111,7 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     texts = texts.add(
         Text::new()
             .set("x", 20)
-            .set("y", SVG_HEIGHT - 20)
+            .set("y", SVG_SIZE - 20)
             .set("text-anchor", "start")
             .set("font-size", 20)
             .add(svg::node::Text::new("-x")),
@@ -119,7 +119,7 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     texts = texts.add(
         Text::new()
             .set("x", 20)
-            .set("y", SVG_HEIGHT - 40)
+            .set("y", SVG_SIZE - 40)
             .set("text-anchor", "start")
             .set("font-size", 20)
             .add(svg::node::Text::new("-y")),
@@ -141,9 +141,9 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     }
     walls = walls.set(
         "transform",
-        format!("translate({}, {})", SVG_WIDTH / 2, SVG_HEIGHT / 2),
+        format!("translate({}, {})", SVG_SIZE / 2, SVG_SIZE / 2),
     );
-    let mut points = Group::new();
+    let mut drones = Group::new();
     let mut trajectory = Group::new();
     // loop with sim
     let mut sim = Sim::new(input);
@@ -154,7 +154,7 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
     for (i, (mut a, mut x, mut y)) in output.out.iter().enumerate() {
         let (ret, hit, d) = sim.query(input, a, x, y);
         let (x, y) = convert_svg_coord(sim.p.0, sim.p.1);
-        points = points.add(drone_before.clone().set("cx", x).set("cy", y));
+        drones = drones.add(drone_before.clone().set("cx", x).set("cy", y));
         trajectory = trajectory.add(
             Line::new()
                 .set("x1", before.0)
@@ -174,34 +174,53 @@ fn generate_svg(input: &Input, output: &Output, turn: usize) -> String {
         }
     }
     let (x, y) = convert_svg_coord(sim.p.0, sim.p.1);
-    points = points.add(drone_current.clone().set("cx", x).set("cy", y));
-    points = points.set(
+    drones = drones.add(drone_current.clone().set("cx", x).set("cy", y));
+    drones = drones.set(
         "transform",
-        format!("translate({}, {})", SVG_WIDTH / 2, SVG_HEIGHT / 2),
+        format!("translate({}, {})", SVG_SIZE / 2, SVG_SIZE / 2),
     );
     trajectory = trajectory.set(
         "transform",
-        format!("translate({}, {})", SVG_WIDTH / 2, SVG_HEIGHT / 2),
+        format!("translate({}, {})", SVG_SIZE / 2, SVG_SIZE / 2),
     );
     let target_unreached = Circle::new().set("r", 3).set("fill", "red");
+    let target_unreached_border = Circle::new()
+        .set(
+            "r",
+            CLEAR_RADIUS as f64 * SVG_SIZE as f64 / DRONE_AREA_SIZE as f64,
+        )
+        .set("fill", "rgba(255, 0, 0, 0.1)")
+        .set("stroke", "rgba(255, 0, 0, 0.3)")
+        .set("stroke-width", 1);
     let target_reached = Circle::new().set("r", 3).set("fill", "green");
+    let target_reached_border = Circle::new()
+        .set(
+            "r",
+            CLEAR_RADIUS as f64 * SVG_SIZE as f64 / DRONE_AREA_SIZE as f64,
+        )
+        .set("fill", "rgba(0, 255, 0, 0.1)")
+        .set("stroke", "rgba(0, 255, 0, 0.3)")
+        .set("stroke-width", 1);
+    let mut targets = Group::new();
     // for target in input.ps.iter() {
     for i in 0..input.ps.len() {
         let target = input.ps[i];
         let (x, y) = convert_svg_coord(target.0 as f64, target.1 as f64);
-        let circle = if sim.visited[i] {
-            target_reached.clone()
+        let (circle, border_circle) = if sim.visited[i] {
+            (target_reached.clone(), target_reached_border.clone())
         } else {
-            target_unreached.clone()
+            (target_unreached.clone(), target_unreached_border.clone())
         };
-        points = points.add(circle.set("cx", x).set("cy", y));
+        targets = targets.add(circle.set("cx", x).set("cy", y));
+        targets = targets.add(border_circle.set("cx", x).set("cy", y));
     }
     let svg = svg::Document::new()
-        .set("width", SVG_WIDTH)
-        .set("height", SVG_HEIGHT)
+        .set("width", SVG_SIZE)
+        .set("height", SVG_SIZE)
         .add(border)
         .add(walls)
-        .add(points)
+        .add(drones)
+        .add(targets)
         .add(texts)
         .add(trajectory);
     svg.to_string()
